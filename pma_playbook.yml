@@ -2,10 +2,8 @@
 - name: Установка phpMyAdmin
   hosts: srv-web
   become: true
-  vars:
-    pma_url: https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.tar.gz
-    pma_dest_dir: /var/www/html/phpMyAdmin
-    pma_tmp_file: /tmp/phpMyAdmin.tar.gz
+  vars_files:
+    vars.yml
 
   tasks:
     - name: Установка php8.2-mysql
@@ -45,6 +43,10 @@
         remote_src: yes
         force: no  # не перезаписывает, если уже есть
 
+    - name: Получить IP-адрес srv-db
+      set_fact:
+        db_ip: "{{ hostvars['srv-db']['ansible_host'] }}"
+
     - name: Настройка phpMyAdmin config.inc.php
       copy:
         dest: "{{ pma_dest_dir }}/config.inc.php"
@@ -54,10 +56,10 @@
           $cfg['blowfish_secret'] = 'a8fjGhd837djf9Kdk73hf92kdmf93KD8';
           $i = 0;
           $i++;
-          $cfg['Servers'][$i]['host'] = '192.168.10.35';
+          $cfg['Servers'][$i]['host'] = '{{ db_ip  }}';
           $cfg['Servers'][$i]['port'] = '3306';
-          $cfg['Servers'][$i]['user'] = 'myuser';
-          $cfg['Servers'][$i]['password'] = '12345';
+          $cfg['Servers'][$i]['user'] = '{{ db_user }}';
+          $cfg['Servers'][$i]['password'] = '{{ db_password }}';
           $cfg['Servers'][$i]['auth_type'] = 'cookie';
           $cfg['Servers'][$i]['compress'] = false;
           $cfg['Servers'][$i]['AllowNoPassword'] = false;

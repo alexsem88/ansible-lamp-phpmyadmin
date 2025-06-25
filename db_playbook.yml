@@ -2,11 +2,8 @@
 - name: Установка MariaDB на Debian
   hosts: srv-db
   become: yes
-  vars:
-    mariadb_root_password: "MyStrongPassword"
-    db_name: "mydb"
-    db_user: "myuser"
-    db_password: "12345"
+  vars_files:
+    vars.yml
 
   tasks:
     - name: Установка MariaDB
