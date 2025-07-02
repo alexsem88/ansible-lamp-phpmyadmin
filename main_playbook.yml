@@ -1,4 +1,3 @@
 ---
-- import_playbook: web_playbook.yml
 - import_playbook: db_playbook.yml
-- import_playbook: pma_playbook.yml
+- import_playbook: web_playbook.yml
