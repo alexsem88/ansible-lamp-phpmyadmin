@@ -4,5 +4,6 @@ db_user: "admin_phpmyadmin"
 db_password: "12345"
 pma_url: https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.tar.gz
 pma_dest_dir: /var/www/html/phpMyAdmin
+pma_temp_dir: /var/www/html/phpMyAdmin/tmp
 pma_tmp_file: /tmp/phpMyAdmin.tar.gz
 phpmyadmin_password: "123456"

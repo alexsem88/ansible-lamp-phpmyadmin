@@ -30,7 +30,6 @@
         host_all: true
         state: absent
         login_unix_socket: /var/run/mysqld/mysqld.sock # при первом запуске
-        #login_password: "{{ mariadb_root_password }}" # при последующих запусках
 
     - name: Запрет удалённого входа для root
       community.mysql.mysql_user:
@@ -38,7 +37,6 @@
         host: "{{ item }}"
         state: absent
         login_unix_socket: /var/run/mysqld/mysqld.sock # при первом запуске
-        #login_password: "{{ mariadb_root_password }}" # при последующих запусках
       loop:
         - "{{ ansible_hostname }}"
         - '%'
@@ -50,15 +48,18 @@
         name: test
         state: absent
         login_unix_socket: /var/run/mysqld/mysqld.sock
-        #login_password: "{{ mariadb_root_password }}"
 
-    - name: Установка пароля root@localhost
+    - name: Получить IP-адрес srv-web
+      set_fact:
+        web_ip: "{{ hostvars['srv-web']['ansible_host'] }}"
+
+    - name: Создание пользователя для phpmyadmin
       community.mysql.mysql_user:
-        name: root
-        host: localhost
-        password: "{{ mariadb_root_password }}"
+        name: "{{ db_user }}"
+        host: "{{ web_ip }}"
+        password: "{{ phpmyadmin_password }}"
+        priv: "*.*:ALL PRIVILEGES,GRANT"
         login_unix_socket: /var/run/mysqld/mysqld.sock
-        #login_password: "{{ mariadb_root_password }}"
         state: present
 
     - name: Убеждаемся, что строка bind-address существует и установлена в 0.0.0.0
@@ -73,18 +74,3 @@
       systemd:
         name: mariadb
         state: restarted
-
-    - name: Получить IP-адрес srv-web
-      set_fact:
-        web_ip: "{{ hostvars['srv-web']['ansible_host'] }}"
-
-    - name: Создание пользователя для phpmyadmin
-      community.mysql.mysql_user:
-        name: "{{ db_user }}"
-        host: "{{ web_ip }}"
-        password: "{{ phpmyadmin_password }}"
-        priv: "*.*:ALL PRIVILEGES,GRANT"
-        login_user: root
-        login_password: "{{ mariadb_root_password }}"
-        login_host: localhost
-        state: present

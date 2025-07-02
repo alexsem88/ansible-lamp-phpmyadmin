@@ -99,7 +99,17 @@
       file:
         path: "{{ pma_dest_dir }}"
         state: directory
+        owner: www-data
+        group: www-data
         mode: '0755'
+
+    - name: Создание каталога tmp для phpMyAdmin
+      file:
+        path: "{{ pma_temp_dir }}"
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0700'
 
     - name: Распаковываем phpMyAdmin в целевой каталог
       unarchive:
