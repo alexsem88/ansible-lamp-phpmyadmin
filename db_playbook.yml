@@ -74,19 +74,17 @@
         name: mariadb
         state: restarted
 
-    - name: Создание базы данных
-      community.mysql.mysql_db:
-        name: "{{ db_name }}"
-        state: present
-        login_user: root
-        login_password: "{{ mariadb_root_password }}"
+    - name: Получить IP-адрес srv-web
+      set_fact:
+        web_ip: "{{ hostvars['srv-web']['ansible_host'] }}"
 
-    - name: Создание пользователя для базы данных
+    - name: Создание пользователя для phpmyadmin
       community.mysql.mysql_user:
         name: "{{ db_user }}"
-        host: "%"
-        password: "{{ db_password }}"
-        priv: "{{ db_name }}.*:ALL"
-        state: present
+        host: "{{ web_ip }}"
+        password: "{{ phpmyadmin_password }}"
+        priv: "*.*:ALL PRIVILEGES,GRANT"
         login_user: root
         login_password: "{{ mariadb_root_password }}"
+        login_host: localhost
+        state: present
