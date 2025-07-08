@@ -1,0 +1,12 @@
+---
+- name: Настройка сервера MariaDB
+  hosts: srv-db
+  become: yes
+  roles:
+    - mariadb
+
+- name: Настройка сервера phpMyAdmin
+  hosts: srv-web
+  become: yes
+  roles:
+    - phpmyadmin

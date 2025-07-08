@@ -1,0 +1,149 @@
+---
+- name: Установка NGINX и PHP
+  apt:
+    name:
+      - nginx
+      - php-fpm
+      - php8.2-mysql
+      - php8.2-mbstring
+    state: present
+    update_cache: true
+
+- name: Убедиться, что NGINX запущен
+  service:
+    name: nginx
+    state: started
+    enabled: true
+
+- name: Создание NGINX-конфига для PHP
+  copy:
+    dest: /etc/nginx/sites-available/php_site
+    content: |
+      server {
+          listen 80;
+          server_name _;
+          root /var/www/html;
+          index index.php index.html;
+
+          location / {
+              try_files $uri $uri/ =404;
+          }
+
+          location /phpMyAdmin {
+              try_files $uri $uri/ =404;
+          }
+
+          location ~ ^/phpMyAdmin/(.*\.php)$ {
+              include snippets/fastcgi-php.conf;
+              fastcgi_pass unix:/run/php/php-fpm.sock;
+              fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+          }
+
+          location ~ ^/phpMyAdmin/(.+\.(jpg|jpeg|gif|css|png|js|ico|html|xml|txt))$ {
+            expires max;
+            log_not_found off;
+          }
+
+          location ~ \.php$ {
+              include snippets/fastcgi-php.conf;
+              fastcgi_pass unix:/run/php/php-fpm.sock;
+              fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+          }
+      }
+
+- name: Включение сайта (симлинк)
+  file:
+    src: /etc/nginx/sites-available/php_site
+    dest: /etc/nginx/sites-enabled/php_site
+    state: link
+    force: true
+
+- name: Удалить default-сайт (если есть)
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Создать index.php в веб-каталоге
+  copy:
+    dest: /var/www/html/index.php
+    content: |
+      <?php
+      phpinfo();
+      ?>
+    owner: www-data
+    group: www-data
+    mode: '0644'
+
+- name: Проверить конфиг NGINX
+  command: nginx -t
+  register: nginx_test
+  failed_when: "'successful' not in nginx_test.stderr"
+
+- name: Перезапустить NGINX
+  service:
+    name: nginx
+    state: restarted
+
+- name: Скачиваем phpMyAdmin архив
+  get_url:
+    url: "{{ pma_url }}"
+    dest: "{{ pma_tmp_file }}"
+
+- name: Создаём каталог для phpMyAdmin
+  file:
+    path: "{{ pma_dest_dir }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+
+- name: Создание каталога tmp для phpMyAdmin
+  file:
+    path: "{{ pma_temp_dir }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0700'
+
+- name: Распаковываем phpMyAdmin в целевой каталог
+  unarchive:
+    src: "{{ pma_tmp_file }}"
+    dest: "{{ pma_dest_dir }}"
+    remote_src: yes
+    extra_opts: [--strip-components=1]
+
+- name: Копируем config.sample.inc.php в config.inc.php
+  copy:
+    src: "{{ pma_dest_dir }}/config.sample.inc.php"
+    dest: "{{ pma_dest_dir }}/config.inc.php"
+    remote_src: yes
+    force: no  # не перезаписывает, если уже есть
+
+- name: Получить IP-адрес srv-db
+  set_fact:
+    db_ip: "{{ hostvars['srv-db']['ansible_host'] }}"
+
+- name: Настройка phpMyAdmin config.inc.php
+  copy:
+    dest: "{{ pma_dest_dir }}/config.inc.php"
+    content: |
+      <?php
+      declare(strict_types=1);
+      $cfg['blowfish_secret'] = 'a8fjGhd837djf9Kdk73hf92kdmf93KD8';
+      $i = 0;
+      $i++;
+      $cfg['Servers'][$i]['host'] = '{{ db_ip  }}';
+      $cfg['Servers'][$i]['port'] = '3306';
+      $cfg['Servers'][$i]['user'] = '{{ db_user }}';
+      $cfg['Servers'][$i]['password'] = '{{ db_password }}';
+      $cfg['Servers'][$i]['auth_type'] = 'cookie';
+      $cfg['Servers'][$i]['compress'] = false;
+      $cfg['Servers'][$i]['AllowNoPassword'] = false;
+    owner: www-data
+    group: www-data
+    mode: '0660'
+
+- name: Перезапускаем nginx
+  systemd:
+    name: nginx
+    state: restarted
