@@ -134,8 +134,6 @@
       $i++;
       $cfg['Servers'][$i]['host'] = '{{ db_ip  }}';
       $cfg['Servers'][$i]['port'] = '3306';
-      $cfg['Servers'][$i]['user'] = '{{ db_user }}';
-      $cfg['Servers'][$i]['password'] = '{{ db_password }}';
       $cfg['Servers'][$i]['auth_type'] = 'cookie';
       $cfg['Servers'][$i]['compress'] = false;
       $cfg['Servers'][$i]['AllowNoPassword'] = false;

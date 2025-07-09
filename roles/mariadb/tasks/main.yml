@@ -50,7 +50,7 @@
   community.mysql.mysql_user:
     name: "{{ db_user }}"
     host: "{{ web_ip }}"
-    password: "{{ phpmyadmin_password }}"
+    password: "{{ db_password }}"
     priv: "*.*:ALL PRIVILEGES,GRANT"
     login_unix_socket: /var/run/mysqld/mysqld.sock
     state: present
